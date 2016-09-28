@@ -1,0 +1,262 @@
+embed
+#include <SDL2/SDL.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+typedef   long double real;
+
+typedef struct {
+  unsigned char r;
+  unsigned char g;
+  unsigned char b;
+  unsigned char derp;
+}pixel;
+
+typedef struct{
+ int width;
+ int height;
+ SDL_Renderer* renderer;
+ SDL_Window* window;
+}sdl_object;
+
+typedef struct{
+ int width;
+ int height;
+ SDL_Texture* texture;
+ pixel* pixels;
+}sdl_texture;
+
+
+body
+end
+
+passive class Rectangle
+  x : int
+  y : int
+  w : int
+  h : int
+
+  def init(x: int, y: int,w: int, h: int) : void{
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+  }
+
+passive class Point2D
+  x : int
+  y : int
+
+  def init(x: int, y: int) : void{
+    this.x = x;
+    this.y = y;
+  }
+
+passive class ColorRGBA
+  r : int
+  g : int
+  b : int
+  a : int
+
+  def init(r: int, g: int, b: int, a: int) : void{
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.a = a;
+  }
+
+class SDL_Main
+  sdl_settings : embed sdl_object* end
+  sdl_texture : embed sdl_texture* end
+  quit : bool
+
+
+  def drawRectangle(rec: Rectangle) :void{
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    let x  = rec.x;
+    let y  = rec.y;
+    let w  = rec.w;
+    let h  = rec.h;
+    embed void
+      SDL_Rect rect;
+      rect.x = #{x};
+      rect.y = #{y};
+      rect.w = #{w};
+      rect.h = #{h};
+      SDL_RenderDrawRect(#{sdl_settings}->renderer, &rect);
+    end
+  }
+
+  def fillRectangle(rec: Rectangle) :void{
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    let x  = rec.x;
+    let y  = rec.y;
+    let w  = rec.w;
+    let h  = rec.h;
+    embed void
+      SDL_Rect rect;
+      rect.x = #{x};
+      rect.y = #{y};
+      rect.w = #{w};
+      rect.h = #{h};
+      SDL_RenderFillRect(#{sdl_settings}->renderer, &rect);
+    end
+  }
+
+  def setRenderColor(c: ColorRGBA) : void{
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    let r = c.r;
+    let g = c.g;
+    let b = c.b;
+    let a = c.a;
+    embed void
+      SDL_SetRenderDrawColor(#{sdl_settings}->renderer,
+                             #{r},
+                             #{g},
+                             #{b},
+                             #{a});
+    end
+  }
+
+  def drawLine(p1: Point2D, p2: Point2D) : void{
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    let x1 = p1.x;
+    let y1 = p1.y;
+    let x2 = p2.x;
+    let y2 = p2.y;
+    embed void
+      SDL_RenderDrawLine(#{sdl_settings}->renderer,
+                         #{x1},
+                         #{y1},
+                         #{x2},
+                         #{y2});
+    end
+  }
+
+  def clearAll() : void {
+    let sdl_settings = this.sdl_settings;
+    embed void
+      SDL_SetRenderDrawColor(#{sdl_settings}->renderer,
+                             0,
+                             0,
+                             0,
+                             255);
+      SDL_RenderClear(#{sdl_settings}->renderer);
+    end
+  }
+
+  def init(width : int, height : int) : void{
+    this.quit = false;
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    embed void 
+       SDL_Init(SDL_INIT_VIDEO);
+      sdl_object* sdl_settings = (sdl_object*)malloc(sizeof(sdl_object));
+      sdl_settings->width = #{width};
+      sdl_settings->height = #{height};
+      sdl_settings->window = SDL_CreateWindow("Encore Program",
+            SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, #{width}, #{height}, 0);
+      sdl_settings->renderer = SDL_CreateRenderer(sdl_settings->window, -1, 0); 
+      #{sdl_settings} = sdl_settings;
+
+      sdl_texture* sdl_only_texture = malloc(sizeof(sdl_texture));
+      sdl_only_texture->width = #{width};
+      sdl_only_texture->height = #{height};
+      sdl_only_texture->texture =  SDL_CreateTexture(sdl_settings->renderer,
+            SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STATIC, #{width}, #{height});
+      sdl_only_texture->pixels = malloc(sdl_only_texture->width*sdl_only_texture->height*sizeof(pixel));
+
+      #{sdl_texture} = sdl_only_texture;
+      
+    end;
+    this.sdl_settings = sdl_settings;
+    this.sdl_texture = sdl_texture;
+  }
+
+  def refresh() : void {
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    let quit = this.quit;
+    embed void
+        SDL_Event event;
+        SDL_Window* window = #{sdl_settings}->window;
+        SDL_Renderer* renderer = #{sdl_settings}->renderer;
+        SDL_Texture* texture = #{sdl_texture}->texture;
+        int width = #{sdl_settings}->width;
+        int height = #{sdl_settings}->height;
+        pixel* pixels = #{sdl_texture}->pixels;
+
+          //SDL_UpdateTexture(texture, NULL, pixels, width * sizeof(pixel));
+          SDL_WaitEventTimeout(&event,1);
+
+          //SDL_RenderCopy(renderer, texture, NULL, NULL);
+          SDL_RenderPresent(renderer);
+          //window_width *= 0.95;
+          switch (event.type)
+          {
+            case SDL_QUIT:
+              #{quit} = true;
+              break;
+          }
+    end;
+    if(this.quit) then{
+      this.quit();
+      ()
+      }
+  }
+
+  def quit() : void{
+    embed void
+        SDL_Quit();
+        10;
+    end
+  
+  }
+
+
+class Main
+    
+    def main() : void{
+      let sdl_main = new SDL_Main(300,300);
+      let i = 0;
+      while(i < 1000){
+        let x1 = 0;
+        let y1 = 0;
+        let x2 = 0;
+        let y2 = 0;
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        let w = 0;
+        let h = 0;
+        embed void
+          #{x1} = rand() % 300;
+          #{y1} = rand() % 300;
+          #{x2} = rand() % 300;
+          #{y2} = rand() % 300;
+          #{r} = rand() % 255;
+          #{g} = rand() % 255;
+          #{b} = rand() % 255;
+          #{w} = rand() % 100;
+          #{h} = rand() % 100;
+        end;
+        sdl_main.setRenderColor(new ColorRGBA(r,g,b,255));
+        --sdl_main.drawLine(new Point2D(x1,y1),new Point2D(x2,y2));
+        --sdl_main.drawRectangle(new Rectangle(x1,y1,w,h));
+        sdl_main.fillRectangle(new Rectangle(x1,y1,w,h));
+        get sdl_main.refresh();
+        --if(i % 100 == 0) then {
+        --  sdl_main.clearAll();
+        --  ();
+        --};
+        i = i +1 ;
+      };
+      print "exited wajl loop";
+    }
+
