@@ -1,0 +1,47 @@
+import SDL_Types
+
+passive class Rectangle
+  x : int
+  y : int
+  w : int
+  h : int
+
+  def init(x: int, y: int,w: int, h: int) : void{
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+  }
+
+passive class Point2D
+  x : int
+  y : int
+
+  def init(x: int, y: int) : void{
+    this.x = x;
+    this.y = y;
+  }
+
+passive class ColorRGBA
+  r : int
+  g : int
+  b : int
+  a : int
+
+  def init(r: int, g: int, b: int, a: int) : void{
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.a = a;
+  }
+
+  def getCRepresentation() : SDL_Color{
+    let r = this.r;
+    let g = this.g;
+    let b = this.b;
+    let a = this.a;
+    embed SDL_Color
+      (SDL_Color){#{r}, #{g}, #{b}, #{a}};
+    end
+  }
+
