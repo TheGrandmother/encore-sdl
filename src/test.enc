@@ -38,6 +38,7 @@ end
 typedef Event = (int)->void
 typedef SDL_Event = embed SDL_Event* end
 typedef SDL_Font = embed TTF_Font* end
+typedef SDL_Color = embed SDL_Color end
 
 class MouseFiddler
   accept : bool
@@ -74,9 +75,7 @@ class MouseFiddler
         #{x0} = (uint64_t)(event->x);
         #{y0} = (uint64_t)(event->y);
       end;
-      let rect = new Rectangle(x0-size/2,y0-size/2, 20,20);
-      main.setRenderColor(new ColorRGBA((((x0*255)/300)),(((y0*255)/300)),b,a));
-      main.fillRectangle(rect);
+      main.drawText("lol",x0-size/2,y0-size/2,new ColorRGBA((((x0*255)/300)),(((y0*255)/300)),b,a));
       ()
     }else{
       () 
@@ -116,6 +115,16 @@ passive class ColorRGBA
     this.g = g;
     this.b = b;
     this.a = a;
+  }
+
+  def getCRepresentation() : SDL_Color{
+    let r = this.r;
+    let g = this.g;
+    let b = this.b;
+    let a = this.a;
+    embed SDL_Color
+      (SDL_Color){#{r}, #{g}, #{b}, #{a}};
+    end
   }
 
 class SDL_Main
@@ -214,15 +223,40 @@ class SDL_Main
 
   def initFont(font_name : String, size: int) : void{
     let font = this.sdl_font;
-    let font_path = font_name;
+    let font_path = font_name.data;
     embed void
-      #{font} = TTF_OpenFont(font_path, #{size});
-      if (font == NULL) {
+      #{font} = TTF_OpenFont(#{font_path}, #{size});
+      if (#{font} == NULL) {
           fprintf(stderr, "error: font not found\n");
           exit(EXIT_FAILURE);
       }
     end;
     this.sdl_font = font;
+  }
+
+  def drawText(text: String, x : int, y: int, color: ColorRGBA) : void{ 
+    let text_color = color.getCRepresentation();
+    let sdl_settings = this.sdl_settings;
+    let font = this.sdl_font;
+    let c_text = text.data;
+    embed void
+      int text_width;
+      int text_height;
+      SDL_Surface *surface;
+      SDL_Rect rect;
+      SDL_Color textColor = {255, 255, 255, 0};
+
+      surface = TTF_RenderText_Solid(#{font}, #{c_text}, #{text_color});
+      SDL_Texture *texture = SDL_CreateTextureFromSurface(#{sdl_settings}->renderer, surface);
+      text_width = surface->w;
+      text_height = surface->h;
+      SDL_FreeSurface(surface);
+      rect.x = #{x};
+      rect.y = #{y};
+      rect.w = text_width;
+      rect.h = text_height;
+      SDL_RenderCopy(#{sdl_settings}->renderer, texture, NULL, &rect);
+    end
   }
 
   def init(width : int, height : int) : void{
@@ -302,13 +336,17 @@ class SDL_Main
       embed void exit(0); end;
     }else if (event_type == embed int SDL_MOUSEBUTTONDOWN; end) then{
       print "Mouse Down event";
-      let f = (this.mouse_down_event);
-      f(this,embed SDL_Event #{sdl_settings}->event; end);
+      if(this.mouse_down_event != null) then {
+        let f = (this.mouse_down_event);
+        f(this,embed SDL_Event #{sdl_settings}->event; end);
+      }
 
     }else if (event_type == embed int SDL_MOUSEBUTTONUP; end) then{
       print "Mouse Up event";
-      let f = (this.mouse_up_event);
-      f(this,embed SDL_Event #{sdl_settings}->event; end);
+      if(this.mouse_up_event != null) then {
+        let f = (this.mouse_up_event);
+        f(this,embed SDL_Event #{sdl_settings}->event; end);
+      }
     }
   }
 
@@ -325,18 +363,19 @@ class Main
     def main() : void{
       let sdl_main = new SDL_Main(300,300);
       let mousorazor = new MouseFiddler();
+      sdl_main.initFont("/usr/share/fonts/truetype/freefont/FreeMonoOblique.ttf",24);
       sdl_main.setDownEvent(
         \(main: SDL_Main, event: SDL_Event) ->
           {
             mousorazor!down(main,event);
           }
       );
-      sdl_main.setUpEvent(
-        \(main: SDL_Main, event: SDL_Event) ->
-          {
-            mousorazor!up(main,event);
-          }
-      );
+      --sdl_main.setUpEvent(
+      --  \(main: SDL_Main, event: SDL_Event) ->
+      --    {
+      --      mousorazor!up(main,event);
+      --    }
+      --);
       let i = 0;
       sdl_main.clearAll();
       while((get mousorazor.getCount()) < 100 and i < 10000){
