@@ -1,0 +1,69 @@
+import SDL_Main
+import SDL_Events
+
+
+class MouseFiddler
+  accept : bool
+  count: int
+
+  def init() : void{
+    this.accept = true;
+    this.count = 0;
+  }
+
+  def getCount() : int{
+    this.count;
+  }
+
+  def up(main: SDL_Main, event: SDL_Event) : void{
+    this.accept = true;
+  }
+
+  def down(tup :(SDL_Main, SDL_MouseButtonEvent)) : bool{
+      let main = null : SDL_Main;
+      let event = null : SDL_MouseButtonEvent;
+    match tup with
+      (main_,event_) => { main = main_;  event = event_};
+    if(true) then{
+      this.accept = false; 
+      this.count = this.count +1;
+      let x0 = 0;
+      let y0 = 0;
+      let r = 0;
+      let g = 0;
+      let b = 127;
+      let a = 127;
+      let w = main.getWidth();
+      let h = main.getHeight();
+      let size = 20;
+      main.drawImage("tux.png",event.x-size/2,event.y-size/2,0.1,0.1);
+      ()
+    }else{
+      () 
+    };
+    true
+  }
+
+class Main
+
+  def main() : void{
+    let sdl_main = new SDL_Main(500,500);
+    let sdl_handler = new SDL_Event_Handler();
+    let mauser = new MouseFiddler();
+    get sdl_main.clearAll();
+    get sdl_main.refresh();
+    get sdl_main.setRenderColor(new ColorRGBA(254,254,254,254));
+    get sdl_main.fillRectangle(new Rectangle(1,1,200,200));
+    get sdl_main.setRenderColor(new ColorRGBA(254,254,254,254));
+    get sdl_main.fillRectangle(new Rectangle(1,1,200,200));
+    get sdl_main.setRenderColor(new ColorRGBA(254,254,254,254));
+    get sdl_main.fillRectangle(new Rectangle(1,300,200,200));
+    get sdl_main.refresh();
+    sdl_handler.addMouseButtonCallback(
+      \(a : (SDL_Main,SDL_MouseButtonEvent)) -> {mauser!down(a);true} 
+    );
+    while(true){
+      get sdl_main.refresh();
+      sdl_main.waitForEvent(sdl_handler,50);
+    }
+  }
