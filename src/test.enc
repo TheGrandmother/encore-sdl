@@ -1,5 +1,7 @@
+import Random
 embed
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -15,22 +17,71 @@ typedef struct {
 }pixel;
 
 typedef struct{
- int width;
- int height;
- SDL_Renderer* renderer;
- SDL_Window* window;
+  int width;
+  int height;
+  SDL_Renderer* renderer;
+  SDL_Window* window;
+  SDL_Event* event;
 }sdl_object;
 
 typedef struct{
- int width;
- int height;
- SDL_Texture* texture;
- pixel* pixels;
+  int width;
+  int height;
+  SDL_Texture* texture;
+  pixel* pixels;
 }sdl_texture;
 
 
 body
 end
+
+typedef Event = (int)->void
+typedef SDL_Event = embed SDL_Event* end
+typedef SDL_Font = embed TTF_Font* end
+
+class MouseFiddler
+  accept : bool
+  count: int
+
+  def init() : void{
+    this.accept = true;
+    this.count = 0;
+  }
+
+  def getCount() : int{
+    this.count;
+  }
+
+  def up(main: SDL_Main, event: SDL_Event) : void{
+    this.accept = true;
+  }
+
+  def down(main: SDL_Main, event: SDL_Event) : void{
+    if(true) then{
+      this.accept = false; 
+      this.count = this.count +1;
+      let x0 = 0;
+      let y0 = 0;
+      let r = 0;
+      let g = 0;
+      let b = 127;
+      let a = 127;
+      let w = main.getWidth();
+      let h = main.getHeight();
+      let size = 20;
+      embed void
+        SDL_MouseButtonEvent* event = (SDL_MouseButtonEvent*)#{event};
+        #{x0} = (uint64_t)(event->x);
+        #{y0} = (uint64_t)(event->y);
+      end;
+      let rect = new Rectangle(x0-size/2,y0-size/2, 20,20);
+      main.setRenderColor(new ColorRGBA((((x0*255)/300)),(((y0*255)/300)),b,a));
+      main.fillRectangle(rect);
+      ()
+    }else{
+      () 
+    }
+  }
 
 passive class Rectangle
   x : int
@@ -70,8 +121,18 @@ passive class ColorRGBA
 class SDL_Main
   sdl_settings : embed sdl_object* end
   sdl_texture : embed sdl_texture* end
+  sdl_font : SDL_Font
   quit : bool
+  mouse_down_event : (SDL_Main,SDL_Event) -> void
+  mouse_up_event : (SDL_Main,SDL_Event) -> void
 
+  def setDownEvent(action: (SDL_Main,SDL_Event) -> void) : void {
+    this.mouse_down_event = action;
+  } 
+
+  def setUpEvent(action: (SDL_Main,SDL_Event) -> void) : void {
+    this.mouse_up_event = action;
+  } 
 
   def drawRectangle(rec: Rectangle) :void{
     let sdl_settings = this.sdl_settings;
@@ -151,18 +212,33 @@ class SDL_Main
     end
   }
 
+  def initFont(font_name : String, size: int) : void{
+    let font = this.sdl_font;
+    let font_path = font_name;
+    embed void
+      #{font} = TTF_OpenFont(font_path, #{size});
+      if (font == NULL) {
+          fprintf(stderr, "error: font not found\n");
+          exit(EXIT_FAILURE);
+      }
+    end;
+    this.sdl_font = font;
+  }
+
   def init(width : int, height : int) : void{
     this.quit = false;
     let sdl_settings = this.sdl_settings;
     let sdl_texture = this.sdl_texture;
     embed void 
-       SDL_Init(SDL_INIT_VIDEO);
+      SDL_Init(SDL_INIT_VIDEO);
+      TTF_Init();
       sdl_object* sdl_settings = (sdl_object*)malloc(sizeof(sdl_object));
       sdl_settings->width = #{width};
       sdl_settings->height = #{height};
       sdl_settings->window = SDL_CreateWindow("Encore Program",
             SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, #{width}, #{height}, 0);
       sdl_settings->renderer = SDL_CreateRenderer(sdl_settings->window, -1, 0); 
+      sdl_settings->event = malloc(sizeof(SDL_Event));
       #{sdl_settings} = sdl_settings;
 
       sdl_texture* sdl_only_texture = malloc(sizeof(sdl_texture));
@@ -179,12 +255,22 @@ class SDL_Main
     this.sdl_texture = sdl_texture;
   }
 
+  def getHeight() : int{
+    let sdl_settings = this.sdl_settings;
+    embed int #{sdl_settings}->height; end;
+  }
+
+  def getWidth() : int{
+    let sdl_settings = this.sdl_settings;
+    embed int #{sdl_settings}->width; end;
+  }
+
   def refresh() : void {
     let sdl_settings = this.sdl_settings;
     let sdl_texture = this.sdl_texture;
     let quit = this.quit;
-    embed void
-        SDL_Event event;
+    if(not quit) then{
+      embed void
         SDL_Window* window = #{sdl_settings}->window;
         SDL_Renderer* renderer = #{sdl_settings}->renderer;
         SDL_Texture* texture = #{sdl_texture}->texture;
@@ -192,23 +278,38 @@ class SDL_Main
         int height = #{sdl_settings}->height;
         pixel* pixels = #{sdl_texture}->pixels;
 
-          //SDL_UpdateTexture(texture, NULL, pixels, width * sizeof(pixel));
-          SDL_WaitEventTimeout(&event,1);
+        //SDL_UpdateTexture(texture, NULL, pixels, width * sizeof(pixel));
+        SDL_WaitEventTimeout(#{sdl_settings}->event,50);
 
-          //SDL_RenderCopy(renderer, texture, NULL, NULL);
-          SDL_RenderPresent(renderer);
-          //window_width *= 0.95;
-          switch (event.type)
-          {
-            case SDL_QUIT:
-              #{quit} = true;
-              break;
-          }
-    end;
+        //SDL_RenderCopy(renderer, texture, NULL, NULL);
+        SDL_RenderPresent(renderer);
+
+      end;
+      this.eventHandler();
+      this.quit = quit;
+    };
     if(this.quit) then{
       this.quit();
       ()
-      }
+    }
+  }
+
+  def eventHandler() : void{
+    let sdl_settings = this.sdl_settings;
+    let event_type = embed int #{sdl_settings}->event->type; end;
+    if(event_type == embed int SDL_QUIT; end) then{
+      print "Quit event";
+      embed void exit(0); end;
+    }else if (event_type == embed int SDL_MOUSEBUTTONDOWN; end) then{
+      print "Mouse Down event";
+      let f = (this.mouse_down_event);
+      f(this,embed SDL_Event #{sdl_settings}->event; end);
+
+    }else if (event_type == embed int SDL_MOUSEBUTTONUP; end) then{
+      print "Mouse Up event";
+      let f = (this.mouse_up_event);
+      f(this,embed SDL_Event #{sdl_settings}->event; end);
+    }
   }
 
   def quit() : void{
@@ -216,7 +317,6 @@ class SDL_Main
         SDL_Quit();
         10;
     end
-  
   }
 
 
@@ -224,8 +324,22 @@ class Main
     
     def main() : void{
       let sdl_main = new SDL_Main(300,300);
+      let mousorazor = new MouseFiddler();
+      sdl_main.setDownEvent(
+        \(main: SDL_Main, event: SDL_Event) ->
+          {
+            mousorazor!down(main,event);
+          }
+      );
+      sdl_main.setUpEvent(
+        \(main: SDL_Main, event: SDL_Event) ->
+          {
+            mousorazor!up(main,event);
+          }
+      );
       let i = 0;
-      while(i < 1000){
+      sdl_main.clearAll();
+      while((get mousorazor.getCount()) < 100 and i < 10000){
         let x1 = 0;
         let y1 = 0;
         let x2 = 0;
@@ -246,13 +360,12 @@ class Main
           #{w} = rand() % 100;
           #{h} = rand() % 100;
         end;
-        sdl_main.setRenderColor(new ColorRGBA(r,g,b,255));
+        --sdl_main.setRenderColor(new ColorRGBA(r,g,b,255));
         --sdl_main.drawLine(new Point2D(x1,y1),new Point2D(x2,y2));
         --sdl_main.drawRectangle(new Rectangle(x1,y1,w,h));
-        sdl_main.fillRectangle(new Rectangle(x1,y1,w,h));
+        --sdl_main.fillRectangle(new Rectangle(x1,y1,w,h));
         get sdl_main.refresh();
         --if(i % 100 == 0) then {
-        --  sdl_main.clearAll();
         --  ();
         --};
         i = i +1 ;
