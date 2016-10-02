@@ -1,0 +1,340 @@
+import SDL_Types
+import SDL_Primitives
+import SDL_Events
+embed
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+typedef   long double real;
+
+typedef struct {
+  unsigned char r;
+  unsigned char g;
+  unsigned char b;
+  unsigned char derp;
+}pixel;
+
+typedef struct{
+  int width;
+  int height;
+  SDL_Renderer* renderer;
+  SDL_Window* window;
+  SDL_Event* event;
+}sdl_object;
+
+typedef struct{
+  int width;
+  int height;
+  SDL_Texture* texture;
+  pixel* pixels;
+}sdl_texture;
+
+
+body
+end
+
+
+class SDL_Main
+  sdl_settings : embed sdl_object* end
+  sdl_texture : embed sdl_texture* end
+  sdl_font : SDL_Font
+  quit : bool
+  mouse_down_event : (SDL_Main,SDL_Event) -> void
+  mouse_up_event : (SDL_Main,SDL_Event) -> void
+
+  def setDownEvent(action: (SDL_Main,SDL_Event) -> void) : void {
+    this.mouse_down_event = action;
+  } 
+
+  def setUpEvent(action: (SDL_Main,SDL_Event) -> void) : void {
+    this.mouse_up_event = action;
+  } 
+
+  def drawRectangle(rec: Rectangle) :void{
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    let x  = rec.x;
+    let y  = rec.y;
+    let w  = rec.w;
+    let h  = rec.h;
+    embed void
+      SDL_Rect rect;
+      rect.x = #{x};
+      rect.y = #{y};
+      rect.w = #{w};
+      rect.h = #{h};
+      SDL_RenderDrawRect(#{sdl_settings}->renderer, &rect);
+    end
+  }
+
+  def fillRectangle(rec: Rectangle) :void{
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    let x  = rec.x;
+    let y  = rec.y;
+    let w  = rec.w;
+    let h  = rec.h;
+    embed void
+      SDL_Rect rect;
+      rect.x = #{x};
+      rect.y = #{y};
+      rect.w = #{w};
+      rect.h = #{h};
+      SDL_RenderFillRect(#{sdl_settings}->renderer, &rect);
+    end
+  }
+
+  def setRenderColor(c: ColorRGBA) : void{
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    let r = c.r;
+    let g = c.g;
+    let b = c.b;
+    let a = c.a;
+    embed void
+      SDL_SetRenderDrawColor(#{sdl_settings}->renderer,
+                             #{r},
+                             #{g},
+                             #{b},
+                             #{a});
+    end
+  }
+
+  def drawImage(image : String, x : int, y : int, x_scale : real, y_scale : real): void{
+    let sdl_settings = this.sdl_settings;
+    let image_path = image.data;
+    embed void
+      SDL_Texture *img = NULL;
+      int w, h; 
+      img = IMG_LoadTexture(#{sdl_settings}->renderer, #{image_path});
+      SDL_QueryTexture(img, NULL, NULL, &w, &h);
+      SDL_Rect texr; 
+      texr.x = #{x}; 
+      texr.y = #{y}; 
+      texr.w = (int)(w*#{x_scale}); 
+      texr.h = (int)(h*#{y_scale}); 
+      SDL_RenderCopy(#{sdl_settings}->renderer, img, NULL, &texr);
+
+    end
+  }
+
+
+  def drawLine(p1: Point2D, p2: Point2D) : void{
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    let x1 = p1.x;
+    let y1 = p1.y;
+    let x2 = p2.x;
+    let y2 = p2.y;
+    embed void
+      SDL_RenderDrawLine(#{sdl_settings}->renderer,
+                         #{x1},
+                         #{y1},
+                         #{x2},
+                         #{y2});
+    end
+  }
+
+  def clearAll() : void {
+    let sdl_settings = this.sdl_settings;
+    embed void
+      SDL_SetRenderDrawColor(#{sdl_settings}->renderer,
+                             0,
+                             0,
+                             0,
+                             255);
+      SDL_RenderClear(#{sdl_settings}->renderer);
+    end
+  }
+
+  def initFont(font_name : String, size: int) : void{
+    let font = this.sdl_font;
+    let font_path = font_name.data;
+    embed void
+      #{font} = TTF_OpenFont(#{font_path}, #{size});
+      if (#{font} == NULL) {
+          fprintf(stderr, "error: font not found\n");
+          exit(EXIT_FAILURE);
+      }
+    end;
+    this.sdl_font = font;
+  }
+
+  def drawText(text: String, x : int, y: int, color: ColorRGBA) : void{ 
+    let text_color = color.getCRepresentation();
+    let sdl_settings = this.sdl_settings;
+    let font = this.sdl_font;
+    let c_text = text.data;
+    embed void
+      int text_width;
+      int text_height;
+      SDL_Surface *surface;
+      SDL_Rect rect;
+      SDL_Color textColor = {255, 255, 255, 0};
+
+      surface = TTF_RenderText_Solid(#{font}, #{c_text}, #{text_color});
+      SDL_Texture *texture = SDL_CreateTextureFromSurface(#{sdl_settings}->renderer, surface);
+      text_width = surface->w;
+      text_height = surface->h;
+      SDL_FreeSurface(surface);
+      rect.x = #{x};
+      rect.y = #{y};
+      rect.w = text_width;
+      rect.h = text_height;
+      SDL_RenderCopy(#{sdl_settings}->renderer, texture, NULL, &rect);
+    end
+  }
+
+  def init(width : int, height : int) : void{
+    this.quit = false;
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    embed void 
+      SDL_Init(SDL_INIT_VIDEO);
+      TTF_Init();
+      sdl_object* sdl_settings = (sdl_object*)malloc(sizeof(sdl_object));
+      sdl_settings->width = #{width};
+      sdl_settings->height = #{height};
+      sdl_settings->window = SDL_CreateWindow("Encore Program",
+            SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, #{width}, #{height}, 0);
+      sdl_settings->renderer = SDL_CreateRenderer(sdl_settings->window, -1, 0); 
+      sdl_settings->event = malloc(sizeof(SDL_Event));
+      #{sdl_settings} = sdl_settings;
+
+      sdl_texture* sdl_only_texture = malloc(sizeof(sdl_texture));
+      sdl_only_texture->width = #{width};
+      sdl_only_texture->height = #{height};
+      sdl_only_texture->texture =  SDL_CreateTexture(sdl_settings->renderer,
+            SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STATIC, #{width}, #{height});
+      sdl_only_texture->pixels = malloc(sdl_only_texture->width*sdl_only_texture->height*sizeof(pixel));
+
+      #{sdl_texture} = sdl_only_texture;
+      
+    end;
+    this.sdl_settings = sdl_settings;
+    this.sdl_texture = sdl_texture;
+  }
+
+  def getHeight() : int{
+    let sdl_settings = this.sdl_settings;
+    embed int #{sdl_settings}->height; end;
+  }
+
+  def getWidth() : int{
+    let sdl_settings = this.sdl_settings;
+    embed int #{sdl_settings}->width; end;
+  }
+
+  def refresh() : void {
+    let sdl_settings = this.sdl_settings;
+    let sdl_texture = this.sdl_texture;
+    let quit = this.quit;
+    embed void
+      //SDL_Window* window = #{sdl_settings}->window;
+      //SDL_Renderer* renderer = #{sdl_settings}->renderer;
+      //SDL_Texture* texture = #{sdl_texture}->texture;
+      //int width = #{sdl_settings}->width;
+      //int height = #{sdl_settings}->height;
+      //pixel* pixels = #{sdl_texture}->pixels;
+
+      //SDL_UpdateTexture(texture, NULL, pixels, width * sizeof(pixel));
+      //SDL_WaitEventTimeout(#{sdl_settings}->event,50);
+
+      //SDL_RenderCopy(renderer, texture, NULL, NULL);
+      SDL_RenderPresent(#{sdl_settings}->renderer);
+
+    end;
+  }
+
+  def pollEvent(handler: SDL_Event_Handler) : void{
+    let sdl_settings = this.sdl_settings; 
+    embed void
+      SDL_PollEvent(#{sdl_settings}->event);
+    end;
+    get handler.handleEvent(this, embed SDL_Event #{sdl_settings}->event; end); --I seriously suspect that this will make things fail.
+  } 
+
+  def waitForEvent(handler: SDL_Event_Handler, timeout : int) : void{
+    let sdl_settings = this.sdl_settings; 
+    if(timeout == 0) then {
+      embed void
+        SDL_WaitEvent(#{sdl_settings}->event);
+      end
+    }else{
+      embed void
+        SDL_WaitEventTimeout(#{sdl_settings}->event,#{timeout});
+      end
+    };
+    get handler.handleEvent(this, embed SDL_Event #{sdl_settings}->event; end); --I seriously suspect that this will make things fail.
+  }
+
+  def quit() : void{
+    embed void
+        SDL_Quit();
+        10;
+    end
+  }
+
+typedef Hack<t> = (SDL_Main,t)
+
+class Event_Vat<event_type>
+  vat : Vat<(SDL_Main,event_type)>
+
+  def init() : void{
+    this.vat = new Vat<(SDL_Main,event_type)>();
+  }
+
+  def registerCallback(action : (Hack<event_type>) -> bool) : void {
+    this.vat.registerPost(
+      \(a: Maybe (SDL_Main,event_type), b: (SDL_Main,event_type)) -> action(b)
+    )
+  }
+
+  def pushEvent(event: (SDL_Main,event_type)) : void {
+    this.vat!write(event);
+  }
+  
+
+class SDL_Event_Handler
+  mouse_button_vat : Event_Vat<SDL_MouseButtonEvent>
+  keyboard_vat : Event_Vat<SDL_KeyboardEvent>
+
+  def init() : void {
+    this.mouse_button_vat = new Event_Vat<SDL_MouseButtonEvent>();
+    this.keyboard_vat = new Event_Vat<SDL_KeyboardEvent>();
+  }
+
+  def addMouseButtonCallback(action : Hack<SDL_MouseButtonEvent> -> bool) : void{
+    this.mouse_button_vat.registerCallback(action);
+  }
+  
+  def addKeyboardCallback(action : Hack<SDL_KeyboardEvent>-> bool) : void{
+    this.keyboard_vat.registerCallback(action);
+  }
+
+  def handleEvent(main: SDL_Main, event : SDL_Event) : void{
+    let event_type = embed int #{event}->type; end;
+    if(event_type == embed int SDL_QUIT; end) then{
+      print "Quit event";
+      embed void exit(0); end;
+    }else if (event_type == embed int SDL_MOUSEBUTTONDOWN; end) then{
+      print "Mouse Down event";
+      this.mouse_button_vat!pushEvent((main,new SDL_MouseButtonEvent(event)));
+    }else if (event_type == embed int SDL_MOUSEBUTTONUP; end) then{
+      print "Mouse Up event";
+      this.mouse_button_vat!pushEvent((main,new SDL_MouseButtonEvent(event)));
+    }else if (event_type == embed int SDL_KEYDOWN; end) then{
+      print "Key down event";
+      this.keyboard_vat!pushEvent((main,new SDL_KeyboardEvent(event)));
+    }else if (event_type == embed int SDL_KEYUP; end) then{
+      print "Key down event";
+      this.keyboard_vat!pushEvent((main,new SDL_KeyboardEvent(event)));
+    }
+  }
+
+

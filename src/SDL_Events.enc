@@ -1,0 +1,73 @@
+import SDL_Types
+import Vat
+
+passive class SDL_MouseButtonEvent
+  timestamp : uint
+  windowID  : uint
+  which     : uint
+  button    : uint
+  state     : uint
+  clicks    : uint
+  x         : int
+  y         : int
+
+  def init(event: SDL_Event) : void{
+    let timestamp =  this.timestamp;
+    let windowID  =  this.windowID ;
+    let which     =  this.which    ;
+    let button    =  this.button   ;
+    let state     =  this.state    ;
+    let clicks    =  this.clicks   ;
+    let x         =  this.x        ;
+    let y         =  this.y        ;
+    embed void
+      SDL_MouseButtonEvent* mouse_event = (SDL_MouseButtonEvent*)#{event};
+      #{timestamp} =  mouse_event->timestamp;
+      #{windowID } =  mouse_event->windowID ;
+      #{which    } =  mouse_event->which    ;
+      #{button   } =  mouse_event->button   ;
+      #{state    } =  mouse_event->state    ;
+      #{clicks   } =  mouse_event->clicks   ;
+      #{x        } =  mouse_event->x        ;
+      #{y        } =  mouse_event->y        ;
+    end;
+    this.timestamp =  timestamp;
+    this.windowID  =  windowID ;
+    this.which     =  which    ;
+    this.button    =  button   ;
+    this.state     =  state    ;
+    this.clicks    =  clicks   ;
+    this.x         =  x        ;
+    this.y         =  y        ;
+  }
+
+passive class SDL_KeyboardEvent
+  timestamp : uint
+  windowID  : uint
+  state     : uint
+  repeated   : uint
+  keycode   : uint
+
+  def init(event: SDL_Event) : void{
+    let timestamp = this.timestamp; 
+    let windowID  = this.windowID ; 
+    let state     = this.state    ; 
+    let repeated   = this.repeated  ; 
+    let keycode   = this.keycode  ; 
+    embed void
+      SDL_KeyboardEvent* key_event = (SDL_KeyboardEvent*)#{event};
+        #{timestamp} = key_event->timestamp; 
+        #{windowID } = key_event->windowID ; 
+        #{state    } = key_event->state    ; 
+        #{repeated  } = key_event->repeat  ; 
+        #{keycode  } = key_event->keysym.sym  ; 
+    end;
+    this.timestamp = timestamp; 
+    this.windowID  = windowID ; 
+    this.state     = state    ; 
+    this.repeated   = repeated  ; 
+    this.keycode   = keycode  ; 
+  
+  }
+
+
