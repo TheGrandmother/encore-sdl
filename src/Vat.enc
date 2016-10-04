@@ -1,0 +1,215 @@
+import List
+
+typedef Pre_action<t> = (Maybe t, t) -> (bool,bool)
+typedef Transformation_action<t> = (Maybe t, t) -> (bool,t)
+typedef Post_Fail_action<t> = (Maybe t, t) -> bool
+
+
+class Vat<t>
+  field : Maybe t
+  pre_actions : LinkedList<(Pre_action<t>)>
+  post_actions : LinkedList<(Post_Fail_action<t>)>
+  trans_actions : LinkedList<(Transformation_action<t>)>
+  fail_actions : LinkedList<(Post_Fail_action<t>)>
+  open : bool
+
+  def init() : void{
+    this.field = Nothing;
+    this.pre_actions = new  LinkedList<(Pre_action<t>)>();
+    this.trans_actions = new  LinkedList<(Transformation_action<t>)>();
+    this.fail_actions = new  LinkedList<(Post_Fail_action<t>)>();
+    this.post_actions = new LinkedList<(Post_Fail_action<t>)>();
+    this.open = true;
+  }  
+
+  def openVat() : void {
+    this.open = true;
+  }
+
+  def closeVat() : void {
+    this.open = false;
+  }
+
+  def block_me() : void{
+    ()
+  }
+  
+  def condRegPost(
+    action : Post_Fail_action<t>,
+    condition : ((Maybe t) -> bool),
+    callback : (Maybe t -> void)
+    ) : bool{
+    if(condition(this.field)) then {
+      this.registerPost(action);
+      true
+    } else {
+      callback(this.field);
+      false
+    }
+  }
+
+  def registerPre(pre : Pre_action<t>) : void{
+    this.pre_actions.append(pre);
+  }
+
+  def registerPost(post : Post_Fail_action<t>) : void{
+    this.post_actions.append(post);
+  }
+
+  def registerFail(fail : Post_Fail_action<t>) : void{
+    this.fail_actions.append(fail);
+  }
+
+  def registerTrans(trans : Transformation_action<t>) : void{
+    this.trans_actions.append(trans);
+  }
+
+  def readOrRegPost(post: Post_Fail_action<t>) : (bool, Maybe t){
+    if this.field != Nothing then {
+      (false, this.field)
+    }else{
+      this.registerPost(post);
+      (true,this.field)
+    }
+  }
+
+  def readOrRegFail(fail: Post_Fail_action<t>) : (bool, Maybe t){
+    if this.field != Nothing then {
+      (false, this.field)
+    }else{
+      this.registerFail(fail);
+      (true,this.field)
+    }
+  }
+  
+  def readOrRegTrans(trans: Transformation_action<t>) : (bool, Maybe t){
+    if this.field != Nothing then {
+      (false, this.field)
+    }else{
+      this.registerTrans(trans);
+      (true,this.field)
+    }
+  }
+
+  def readOrRegPre(pre: Pre_action<t>) : (bool, Maybe t){
+    if this.field != Nothing then {
+      (false, this.field)
+    }else{
+      this.registerPre(pre);
+      (true,this.field)
+    }
+  }
+
+  def executePreActions(new_val : t) : bool{
+    let current = this.pre_actions.first;
+    let old = null : Node<(Pre_action<t>)> ;
+    let success = true;
+
+    if(current == null) then {
+      ();
+    }else{
+      while ((current != null) and success ){
+        let keep = true;
+        let f = current.data;
+        match f(this.field, new_val) with
+          (keep_,val_) => {keep = keep_; success = val_};
+
+        if( not keep ) then{
+          if(old == null) then {
+            this.pre_actions.first = old
+
+          }else{
+            old.next = current.next
+
+          };
+          current = current.next;
+
+        }else{
+          old = current;
+          current = current.next;
+
+        };
+      };
+
+    };
+    if success then{
+      let transformed = this.executeTransActions(new_val);
+      this.executePostOrFail(this.post_actions,transformed);
+      this.field = Just transformed;
+    }else{
+      this.executePostOrFail(this.fail_actions,new_val);
+    };
+    success
+  }
+
+  def executeTransActions(new_val : t) : t {
+    let current = this.trans_actions.first;
+    let old = null : Node<(Transformation_action<t>)> ;
+
+    if(current == null) then {
+        ()
+    }else{
+      while ((current != null) ){
+        let f = current.data;
+        let keep = true;
+        match f(this.field, new_val) with
+          (keep_,val_) => {keep = keep_; new_val = val_};
+
+        if( not keep ) then{
+          if(old == null) then {
+            this.trans_actions.first = old
+
+          }else{
+            old.next = current.next
+
+          };
+          current = current.next;
+
+        }else{
+          old = current;
+          current = current.next;
+        }
+      }
+    };
+    new_val
+  }
+
+  def executePostOrFail(actions: LinkedList<(Post_Fail_action<t>)>, new_val: t): void{
+    let current = actions.first;
+    let old = null : Node<(Post_Fail_action<t>)> ;
+
+    if(current == null) then {
+      ()
+    }else{
+      while ((current != null) ){
+        let f = current.data;
+        let keep = f(this.field, new_val);
+        if( not keep ) then{
+          if(old == null) then {
+            actions.first = old
+
+          }else{
+            old.next = current.next
+
+          };
+          current = current.next;
+
+        }else{
+          old = current;
+          current = current.next;
+        }
+      }
+    }
+  }
+
+  def write(new_val : t ) :bool{
+    if(this.open) then {
+      this.executePreActions(new_val)
+    }else{
+      false
+    }
+  }
+
+  def read() : Maybe t{
+    this.field
+  }
