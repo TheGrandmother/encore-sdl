@@ -5,10 +5,14 @@ import SDL_Events
 class MouseFiddler
   accept : bool
   count: int
+  scale: real
+  draw: bool
 
   def init() : void{
     this.accept = true;
     this.count = 0;
+    this.scale = 0.1;
+    this.draw = false;
   }
 
   def getCount() : int{
@@ -19,27 +23,40 @@ class MouseFiddler
     this.accept = true;
   }
 
-  def down(tup :(SDL_Main, SDL_MouseButtonEvent)) : bool{
-      let main = null : SDL_Main;
-      let event = null : SDL_MouseButtonEvent;
+  def key(tup :(SDL_Main, SDL_KeyboardEvent)) : bool{
+    let main = null : SDL_Main;
+    let event = null : SDL_KeyboardEvent;
     match tup with
       (main_,event_) => { main = main_;  event = event_};
-    if(true) then{
-      this.accept = false; 
-      this.count = this.count +1;
-      let x0 = 0;
-      let y0 = 0;
-      let r = 0;
-      let g = 0;
-      let b = 127;
-      let a = 127;
-      let w = main.getWidth();
-      let h = main.getHeight();
-      let size = 20;
-      main.drawImage("tux.png",event.x-size/2,event.y-size/2,0.1,0.1);
-      ()
+    if((event.state == embed uint SDL_PRESSED; end))then {
+      if((event.keycode == embed uint SDLK_UP; end)) then{
+        this.scale = this.scale +0.01;
+      }else if((event.keycode == embed uint SDLK_DOWN; end)) then{
+        this.scale = this.scale -0.01;
+      };
+    };
+    true
+  }
+
+  def draw(tup: (SDL_Main, SDL_MouseMotionEvent)) : bool{
+    let main = null : SDL_Main;
+    let event = null : SDL_MouseMotionEvent;
+    match tup with (main_,event_) => { print "setting main"; main = main_;print "setting event";  event = event_};
+    if(this.draw) then{
+      main!drawImage("tux.png",event.x,event.y,this.scale,this.scale);
+    };
+    true
+  }
+
+  def down(tup :(SDL_Main, SDL_MouseButtonEvent)) : bool{
+    let main = null : SDL_Main;
+    let event = null : SDL_MouseButtonEvent;
+    match tup with
+      (main_,event_) => { main = main_;  event = event_};
+    if(event.state == embed uint SDL_PRESSED; end) then {
+      this.draw = true;
     }else{
-      () 
+      this.draw = false;
     };
     true
   }
@@ -51,16 +68,17 @@ class Main
     let sdl_handler = new SDL_Event_Handler();
     let mauser = new MouseFiddler();
     get sdl_main.clearAll();
-    get sdl_main.refresh();
     get sdl_main.setRenderColor(new ColorRGBA(254,254,254,254));
-    get sdl_main.fillRectangle(new Rectangle(1,1,200,200));
-    get sdl_main.setRenderColor(new ColorRGBA(254,254,254,254));
-    get sdl_main.fillRectangle(new Rectangle(1,1,200,200));
-    get sdl_main.setRenderColor(new ColorRGBA(254,254,254,254));
-    get sdl_main.fillRectangle(new Rectangle(1,300,200,200));
+    get sdl_main.fillRectangle(new Rectangle(0,0,500,500));
     get sdl_main.refresh();
     sdl_handler.addMouseButtonCallback(
       \(a : (SDL_Main,SDL_MouseButtonEvent)) -> {mauser!down(a);true} 
+    );
+    sdl_handler.addKeyboardCallback(
+      \(a : (SDL_Main,SDL_KeyboardEvent)) -> {mauser!key(a);true} 
+    );
+    sdl_handler.addMotionCallback(
+      \(a : (SDL_Main,SDL_MouseMotionEvent)) -> {mauser!draw(a);true} 
     );
     while(true){
       get sdl_main.refresh();

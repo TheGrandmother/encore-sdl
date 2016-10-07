@@ -41,6 +41,49 @@ passive class SDL_MouseButtonEvent
     this.y         =  y        ;
   }
 
+passive class SDL_MouseMotionEvent
+  timestamp : uint
+  windowID  : uint
+  which     : uint
+  state     : uint
+  x         : int
+  y         : int
+  xrel      : int
+  yrel      : int
+  
+  def init(event: SDL_Event) : void{
+    let timestamp = this.timestamp;
+    let windowID  = this.windowID ;
+    let which     = this.which    ;
+    let state     = this.state    ;
+    let x         = this.x        ;
+    let y         = this.y        ;
+    let xrel      = this.xrel     ;
+    let yrel      = this.yrel     ;
+    embed void
+      SDL_MouseMotionEvent* mouse_event = (SDL_MouseMotionEvent*)#{event};
+      #{timestamp} = mouse_event->timestamp;
+      #{windowID } = mouse_event->windowID ;
+      #{which    } = mouse_event->which    ;
+      #{state    } = mouse_event->state    ;
+      #{x        } = mouse_event->x        ;
+      #{y        } = mouse_event->y        ;
+      #{xrel     } = mouse_event->xrel     ;
+      #{yrel     } = mouse_event->yrel     ;
+
+    end;
+    this.timestamp = timestamp;
+    this.windowID  = windowID ;
+    this.which     = which    ;
+    this.state     = state    ;
+    this.x         = x        ;
+    this.y         = y        ;
+    this.xrel      = xrel     ;
+    this.yrel      = yrel     ;
+  }
+
+
+
 passive class SDL_KeyboardEvent
   timestamp : uint
   windowID  : uint

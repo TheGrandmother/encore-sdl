@@ -204,10 +204,11 @@ class Vat<t>
 
   def write(new_val : t ) :bool{
     if(this.open) then {
-      this.executePreActions(new_val)
+      this.executePreActions(new_val);
     }else{
       false
-    }
+    };
+    true;
   }
 
   def read() : Maybe t{
