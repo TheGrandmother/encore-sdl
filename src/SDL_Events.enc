@@ -2,114 +2,115 @@ import SDL_Types
 import Vat
 
 passive class SDL_MouseButtonEvent
-  timestamp : uint
-  windowID  : uint
-  which     : uint
-  button    : uint
-  state     : uint
-  clicks    : uint
-  x         : int
-  y         : int
+  timestamp : uint -- The timestamp of the event.
+  windowID  : uint -- The window ID
+  which     : uint -- Used to differentiate between touchpad and mouse.
+  button    : uint -- Which mouse button was pressed.
+  state     : uint -- If the button is pressed or released.
+  clicks    : uint -- If it was a double click or a single click.
+  x         : int  -- The x cordinate relative to the window.
+  y         : int  -- The y cordinate relative to the window.
 
   def init(event: SDL_Event) : void{
     let timestamp =  this.timestamp;
-    let windowID  =  this.windowID ;
-    let which     =  this.which    ;
-    let button    =  this.button   ;
-    let state     =  this.state    ;
-    let clicks    =  this.clicks   ;
-    let x         =  this.x        ;
-    let y         =  this.y        ;
+    let windowID  =  this.windowID;
+    let which     =  this.which;
+    let button    =  this.button;
+    let state     =  this.state;
+    let clicks    =  this.clicks;
+    let x         =  this.x;
+    let y         =  this.y;
     embed void
       SDL_MouseButtonEvent* mouse_event = (SDL_MouseButtonEvent*)#{event};
       #{timestamp} =  mouse_event->timestamp;
-      #{windowID } =  mouse_event->windowID ;
-      #{which    } =  mouse_event->which    ;
-      #{button   } =  mouse_event->button   ;
-      #{state    } =  mouse_event->state    ;
-      #{clicks   } =  mouse_event->clicks   ;
-      #{x        } =  mouse_event->x        ;
-      #{y        } =  mouse_event->y        ;
+      #{windowID } =  mouse_event->windowID;
+      #{which    } =  mouse_event->which;
+      #{button   } =  mouse_event->button;
+      #{state    } =  mouse_event->state;
+      #{clicks   } =  mouse_event->clicks;
+      #{x        } =  mouse_event->x;
+      #{y        } =  mouse_event->y;
     end;
     this.timestamp =  timestamp;
-    this.windowID  =  windowID ;
-    this.which     =  which    ;
-    this.button    =  button   ;
-    this.state     =  state    ;
-    this.clicks    =  clicks   ;
-    this.x         =  x        ;
-    this.y         =  y        ;
+    this.windowID  =  windowID;
+    this.which     =  which;
+    this.button    =  button;
+    this.state     =  state;
+    this.clicks    =  clicks;
+    this.x         =  x;
+    this.y         =  y;
   }
 
 passive class SDL_MouseMotionEvent
-  timestamp : uint
-  windowID  : uint
-  which     : uint
-  state     : uint
-  x         : int
-  y         : int
-  xrel      : int
-  yrel      : int
+  timestamp : uint  -- The timestamp of the event.
+  windowID  : uint  -- The window ID
+  which     : uint  -- Used to differentiate between touchpad and mouse.
+  state     : uint  -- Which mouse button was pressed.
+  x         : int   -- The x cordinate relative to the window.
+  y         : int   -- The y cordinate relative to the window.
+  xrel      : int   -- X relative motion to the previous motion event.
+  yrel      : int   -- Y relative motion to the previous mouse event.
   
   def init(event: SDL_Event) : void{
     let timestamp = this.timestamp;
-    let windowID  = this.windowID ;
-    let which     = this.which    ;
-    let state     = this.state    ;
-    let x         = this.x        ;
-    let y         = this.y        ;
-    let xrel      = this.xrel     ;
-    let yrel      = this.yrel     ;
+    let windowID  = this.windowID;
+    let which     = this.which;
+    let state     = this.state;
+    let x         = this.x;
+    let y         = this.y;
+    let xrel      = this.xrel;
+    let yrel      = this.yrel;
     embed void
       SDL_MouseMotionEvent* mouse_event = (SDL_MouseMotionEvent*)#{event};
       #{timestamp} = mouse_event->timestamp;
-      #{windowID } = mouse_event->windowID ;
-      #{which    } = mouse_event->which    ;
-      #{state    } = mouse_event->state    ;
-      #{x        } = mouse_event->x        ;
-      #{y        } = mouse_event->y        ;
-      #{xrel     } = mouse_event->xrel     ;
-      #{yrel     } = mouse_event->yrel     ;
+      #{windowID } = mouse_event->windowID;
+      #{which    } = mouse_event->which;
+      #{state    } = mouse_event->state;
+      #{x        } = mouse_event->x;
+      #{y        } = mouse_event->y;
+      #{xrel     } = mouse_event->xrel;
+      #{yrel     } = mouse_event->yrel;
 
     end;
     this.timestamp = timestamp;
-    this.windowID  = windowID ;
-    this.which     = which    ;
-    this.state     = state    ;
-    this.x         = x        ;
-    this.y         = y        ;
-    this.xrel      = xrel     ;
-    this.yrel      = yrel     ;
+    this.windowID  = windowID;
+    this.which     = which;
+    this.state     = state;
+    this.x         = x;
+    this.y         = y;
+    this.xrel      = xrel;
+    this.yrel      = yrel;
   }
 
 
 
 passive class SDL_KeyboardEvent
-  timestamp : uint
-  windowID  : uint
-  state     : uint
-  repeated   : uint
-  keycode   : uint
+  timestamp : uint -- The timestamp of the event.
+  windowID  : uint -- The window ID
+  state     : uint -- If the button was pressed or released.
+  repeated  : uint -- Will be non zero if its a repeat key.
+  keycode   : uint -- The keycode. See https://wiki.libsdl.org/SDL_Keycode
+                   -- Take note that this field stores the SDL_Keycode value.
 
   def init(event: SDL_Event) : void{
     let timestamp = this.timestamp; 
-    let windowID  = this.windowID ; 
-    let state     = this.state    ; 
-    let repeated   = this.repeated  ; 
-    let keycode   = this.keycode  ; 
+    let windowID  = this.windowID; 
+    let state     = this.state; 
+    let repeated  = this.repeated; 
+    let keycode   = this.keycode; 
     embed void
       SDL_KeyboardEvent* key_event = (SDL_KeyboardEvent*)#{event};
         #{timestamp} = key_event->timestamp; 
-        #{windowID } = key_event->windowID ; 
-        #{state    } = key_event->state    ; 
-        #{repeated  } = key_event->repeat  ; 
-        #{keycode  } = key_event->keysym.sym  ; 
+        #{windowID } = key_event->windowID; 
+        #{state    } = key_event->state; 
+        #{repeated } = key_event->repeat; 
+        #{keycode  } = key_event->keysym.sym; 
     end;
     this.timestamp = timestamp; 
-    this.windowID  = windowID ; 
-    this.state     = state    ; 
-    this.repeated   = repeated  ; 
-    this.keycode   = keycode  ; 
+    this.windowID  = windowID; 
+    this.state     = state; 
+    this.repeated  = repeated; 
+    this.keycode   = keycode; 
   
   }
 

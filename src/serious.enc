@@ -41,7 +41,8 @@ class MouseFiddler
   def draw(tup: (SDL_Main, SDL_MouseMotionEvent)) : bool{
     let main = null : SDL_Main;
     let event = null : SDL_MouseMotionEvent;
-    match tup with (main_,event_) => { print "setting main"; main = main_;print "setting event";  event = event_};
+    match tup with (main_,event_) => {main = main_; event = event_};
+
     if(this.draw) then{
       main!drawImage("tux.png",event.x,event.y,this.scale,this.scale);
     };
