@@ -56,6 +56,7 @@ class MouseFiddler
       (main_,event_) => { main = main_;  event = event_};
     if(event.state == embed uint SDL_PRESSED; end) then {
       this.draw = true;
+      main!drawImage("tux.png",event.x,event.y,this.scale,this.scale);
     }else{
       this.draw = false;
     };
