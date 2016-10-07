@@ -73,6 +73,8 @@ Initializes the SDL system and creates the window.
 | width| int  | The width of the window |
 | height | int | The height of the window|
 
+---
+
 ###initFont
 `initFont(font_name : String, size: int) : void`
 ####Description
@@ -87,6 +89,8 @@ the fonts whenever one switches between fonts.
 |font_name| String | The path to the TTF font. |
 | size| int | The size of the font on pts. |
 
+---
+
 ###drawText
 `drawText(text: String, x : int, y: int, color: ColorRGBA) : void`
 ####Description
@@ -100,11 +104,15 @@ currently loaded font.
 | y | int | The y coordinate of the text. |
 | color | ColorRGBA | The color of the text |
 
+---
+
 ###refresh
 `refresh() : void`
 ####Description
 Flips the frame buffers, essentially drawing everything you wanted
 onto the screen.
+
+---
 
 ###pollEvent
 `pollEvent(handler: SDL_Event_Handler) : void`
@@ -115,6 +123,8 @@ if such an event is present.
 | Name | Type |  Description |
 |:-----|:----:|:-------------|
 | handler | SDL_Event_Handler | The event handler responsible to deal with the event. |
+
+---
 
 ###waitForEvent
 `waitForEvent(handler: SDL_Event_Handler, timeout : int) : void`
@@ -131,6 +141,8 @@ times even though no new event was found.
 | handler | SDL_Event_Handler | The event handler responsible for the event |
 | timeout | int | For how long to wait for an event before returning. If set to zero we will block indefinitely|
 
+---
+
 ###drawRectangle
 `drawRectangle(rec: Rectangle) :void`
 ####Description
@@ -139,6 +151,8 @@ Draws the outline of an rectangle on the screen.
 | Name | Type |  Description |
 |:-----|:----:|:-------------|
 | rec | Rectangle | The rectangle to be drawn |
+
+---
 
 
 ###fillRectangle
@@ -150,6 +164,8 @@ Fills an rectangle on the screen.
 |:-----|:----:|:-------------|
 | rec | Rectangle | The rectangle to be drawn |
 
+---
+
 ###setRendererColor
 `setRenderColor(c: ColorRGBA) : void`
 ####Description
@@ -159,6 +175,8 @@ This does not affect the color for fonts and images.
 | Name | Type |  Description |
 |:-----|:----:|:-------------|
 | c    | ColorRGBA | The color to be set |
+
+---
 
 ###drawImage
 `drawImage(image_path : String, x : int, y : int, x_scale : real, y_scale : real): void`
@@ -173,6 +191,8 @@ Draws an image onto the screen.
 | x_scale | real | The horizontal scaling factor of the image |
 | y_scale | real | The vertical scaling factor of the image. |
 
+---
+
 ###drawLine
 `drawLine(p1: Point2D, p2: Point2D) : void`
 ####Description
@@ -183,13 +203,20 @@ Draws a line between the two points
 | p1 | Point2D | The starting point of the line |
 | p2 | Point2D | The ending point of the line |
 
+---
+
 ###clearAll
 `clearAll() : void`
 ####Description
 Blanks the entire frame buffer
+
+---
 
 ###fillAll
 `fillAll() : void`
 ####Description
 Fills the entire frame buffer with the selected color.
 
+---
+
+**MORE DOCUMENTATION WILL COME**
