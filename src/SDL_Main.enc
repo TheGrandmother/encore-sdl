@@ -123,6 +123,9 @@ class SDL_Main
       SDL_Texture *img = NULL;
       int w, h; 
       img = IMG_LoadTexture(#{sdl_settings}->renderer, #{image_path});
+      if(img == NULL){
+        fprintf(stderr,"Error occuered while loading image:\n%s",#{image_path});
+      }
       SDL_QueryTexture(img, NULL, NULL, &w, &h);
       SDL_Rect rect; 
       rect.x = #{x}; 
@@ -199,6 +202,10 @@ class SDL_Main
     let font = this.sdl_font;
     let c_text = text.data;
     embed void
+      if(#{font} == NULL){
+        fputs("Tried to draw font with no font loaded!",stderr);
+        exit(1);
+      }
       int text_width;
       int text_height;
       SDL_Surface *surface;
@@ -225,7 +232,9 @@ class SDL_Main
     this.quit = false;
     let sdl_settings = this.sdl_settings;
     let sdl_texture = this.sdl_texture;
+    let sdl_font = this.sdl_font;
     embed void 
+      #{sdl_font} = NULL;
       SDL_Init(SDL_INIT_VIDEO);
       TTF_Init();
       sdl_object* sdl_settings = (sdl_object*)malloc(sizeof(sdl_object));
@@ -249,6 +258,7 @@ class SDL_Main
     end;
     this.sdl_settings = sdl_settings;
     this.sdl_texture = sdl_texture;
+    this.sdl_font = sdl_font;
   }
 
   def getHeight() : int{
